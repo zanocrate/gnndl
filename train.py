@@ -1,94 +1,56 @@
-from torch_geometric.nn.conv import EdgeConv
-from torch import nn
 # from torch_geometric.transforms import FaceToEdge
 from transform import Decimation_FaceToEdge
 from torch_geometric.datasets import ModelNet
 from torch_geometric.loader import DataLoader
-from torch_geometric.nn import aggr
 import os
 
 import torch
 import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
-writer = SummaryWriter(comment='with_decimation')
+writer = SummaryWriter(comment='extra_edgeconv_more_final_features_MODELNET10')
+# setting device on GPU if available, else CPU
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+
+################# DATASET
 
 TARGET_REDUCTION = 0.7
 transform = Decimation_FaceToEdge(remove_faces=True,target_reduction=TARGET_REDUCTION)
 
-train_dataset = ModelNet(root=os.getcwd(),name='10',train=True,transform=transform)
-train_loader = DataLoader(dataset=train_dataset,batch_size=8,shuffle=True) 
+BATCH_SIZE = 6
 
-test_dataset = ModelNet(root=os.getcwd(),name='10',train=False,transform=transform)
-test_loader = DataLoader(dataset=test_dataset,batch_size=8,shuffle=True) 
+MODELNET = 10
 
+train_dataset = ModelNet(root=os.getcwd(),name=str(MODELNET),train=True,transform=transform)
+train_loader = DataLoader(dataset=train_dataset,batch_size=BATCH_SIZE,shuffle=True) 
 
-
-class MyGNN(nn.Module):
-
-    def __init__(self,output_classes=10):
-
-        super().__init__()
-        
-        self.edge_conv_1 = EdgeConv(
-                # here we define h_theta
-                nn=nn.Sequential(
-                    nn.Linear(2*3,64),
-                    nn.Sigmoid()
-                ),
-                aggr='max'
-            )
-        
-        self.edge_conv_2 = EdgeConv(
-                nn=nn.Sequential(
-                    nn.Linear(2*64,64),
-                    nn.Sigmoid()
-                ),
-                aggr='max'
-            )
-
-        self.edge_conv_3 = EdgeConv(
-                nn=nn.Sequential(
-                    nn.Linear(2*64,64),
-                    nn.Sigmoid()
-                ),
-                aggr='max'
-            )
-
-        self.edge_conv_4 = EdgeConv(
-                nn=nn.Sequential(
-                    nn.Linear(2*64,128),
-                    nn.Sigmoid()
-                ),
-                aggr='max'
-            )
-        
-        self.max_pooling = aggr.MaxAggregation()
-        self.mean_pooling = aggr.MeanAggregation()
-
-        self.output_layer = nn.Sequential(
-            nn.Linear(128,output_classes)
-        )
-
-    def forward(self,x,edge_index,batch):
-
-        x = self.edge_conv_1(x,edge_index)
-        x = self.edge_conv_2(x,edge_index)
-        x = self.edge_conv_3(x,edge_index)
-        x = self.edge_conv_4(x,edge_index)
-        x = self.max_pooling(x,batch)
-
-        return self.output_layer(x)
+test_dataset = ModelNet(root=os.getcwd(),name=str(MODELNET),train=False,transform=transform)
+test_loader = DataLoader(dataset=test_dataset,batch_size=BATCH_SIZE,shuffle=True) 
 
 
+####################### MODEL
 
-model = MyGNN(10)
+from model import MyGNN
+model = MyGNN(MODELNET)
+model.to(device)
 
+####################### OPTIMIZER AND LOSS
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+LR = 0.005
+# GAMMA = 0.5
+
+optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 criterion = torch.nn.CrossEntropyLoss()  # Define loss criterion.
+# scheduler = torch.optim.lr_scheduler.StepLR(optimizer,step_size=5,gamma=GAMMA)
 
-pbar = tqdm.tqdm(range(1,101))
+
+######################### TRAINING LOOP
+
+val_best_accuracy = 0
+val_best_loss = 1e10
+
+pbar = tqdm.tqdm(range(1,151))
 for epoch in pbar:
 
     # training mode
@@ -151,6 +113,10 @@ for epoch in pbar:
     writer.add_scalar('Loss/test',total_val_loss,epoch)
     writer.add_scalar('Accuracy/test',total_val_accuracy,epoch)
 
+    if total_val_accuracy > val_best_accuracy: val_best_accuracy = total_val_accuracy
+    if total_val_loss < val_best_loss: val_best_loss = total_val_loss
+
+
     torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -159,3 +125,18 @@ for epoch in pbar:
                 }, os.path.join(writer.log_dir,'model.pt'))
 
     # pbar.set_description(f"Epoch loss {total_loss}")
+
+writer.add_hparams(
+    hparam_dict= {
+        'lr' : LR,
+        # 'gamma' : GAMMA,
+        'batch_size' : BATCH_SIZE,
+        'target_reduction' : TARGET_REDUCTION
+    },
+
+    metric_dict = {
+        'hparams/val_accuracy' : val_best_accuracy,
+        'hparams/val_loss' : val_best_loss
+
+    }
+)

@@ -39,7 +39,8 @@ class Decimation_FaceToEdge(BaseTransform):
         self.traslate = traslate
         self.scale = scale
         self.rotate = rotate
-
+        self.add_master_node = add_master_node
+        
     def __face_to_edge(self, data: Data) -> Data:
         if hasattr(data, 'face'):
             face = data.face
