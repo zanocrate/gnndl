@@ -8,39 +8,40 @@ import torch
 import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
-writer = SummaryWriter(comment='extra_edgeconv_more_final_features_MODELNET10')
+# open configuration file
+import json
+with open("config.json") as f: config = json.load(f)
+
+writer = SummaryWriter(log_dir=config['log_dir'],comment='extra_edgeconv_more_final_features_MODELNET10')
 # setting device on GPU if available, else CPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 ################# DATASET
 
-TARGET_REDUCTION = 0.7
-transform = Decimation_FaceToEdge(remove_faces=True,target_reduction=TARGET_REDUCTION)
 
-BATCH_SIZE = 6
+transform = Decimation_FaceToEdge(remove_faces=True,target_reduction=config['target_reduction'])
 
-MODELNET = 10
+assert config['dataset'] == 10 or config['dataset'] == 40
 
-train_dataset = ModelNet(root=os.getcwd(),name=str(MODELNET),train=True,transform=transform)
-train_loader = DataLoader(dataset=train_dataset,batch_size=BATCH_SIZE,shuffle=True) 
+train_dataset = ModelNet(root=os.getcwd(),name=str(config['dataset']),train=True,transform=transform)
+train_loader = DataLoader(dataset=train_dataset,batch_size=config['batch_size'],shuffle=True) 
 
-test_dataset = ModelNet(root=os.getcwd(),name=str(MODELNET),train=False,transform=transform)
-test_loader = DataLoader(dataset=test_dataset,batch_size=BATCH_SIZE,shuffle=True) 
+test_dataset = ModelNet(root=os.getcwd(),name=str(config['dataset']),train=False,transform=transform)
+test_loader = DataLoader(dataset=test_dataset,batch_size=config['batch_size'],shuffle=True) 
 
 
 ####################### MODEL
 
 from model import MyGNN
-model = MyGNN(MODELNET)
+model = MyGNN(config['dataset'])
 model.to(device)
 
 ####################### OPTIMIZER AND LOSS
 
-LR = 0.005
 # GAMMA = 0.5
 
-optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+optimizer = torch.optim.Adam(model.parameters(), lr=config['learning_rate'])
 criterion = torch.nn.CrossEntropyLoss()  # Define loss criterion.
 # scheduler = torch.optim.lr_scheduler.StepLR(optimizer,step_size=5,gamma=GAMMA)
 
