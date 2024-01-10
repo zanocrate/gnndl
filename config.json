@@ -1,6 +1,9 @@
 {
-    "log_dir" : "/dataNfs/gnn_runs/" ,
+    "log_dir" : "/dataNfs/gnn/runs/" ,
+    "run_name" : "extra_edgeconv_more_final_features_MODELNET10", 
     "dataset" : 10,
+    "epochs" : 100,
+    "dataset_root" : "/dataNfs/gnn/",
     "target_reduction" : 0.7,
     "batch_size" : 6,
     "learning_rate" : 0.005
