@@ -97,8 +97,8 @@ class Decimation_FaceToEdge(BaseTransform):
 
 
             # replace
-            data.face = torch.from_numpy(mesh_decimated.faces.reshape(-1,4)[:,1:].T)
-            data.pos = torch.from_numpy(mesh_decimated.points)
+            data.face = torch.from_numpy(np.copy(mesh_decimated.faces.reshape(-1,4)[:,1:].T))
+            data.pos = torch.from_numpy(np.copy(mesh_decimated.points))
 
             return data, center_of_mass
 
