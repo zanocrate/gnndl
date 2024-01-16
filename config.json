@@ -1,10 +1,14 @@
 {
     "log_dir" : "/dataNfs/gnn/runs/" ,
-    "run_name" : "extra_edgeconv_more_final_features_MODELNET10", 
+    "run_name" : "best_model_with_rotations_MODELNET10", 
     "dataset" : 10,
-    "epochs" : 100,
     "dataset_root" : "/dataNfs/gnn/",
-    "target_reduction" : 0.7,
-    "batch_size" : 6,
-    "learning_rate" : 0.005
+    "epochs" : 150,
+    "target_reduction" : 0.75,
+    "rotate" : true,
+    "batch_size" : 8,
+    "learning_rate" : 0.05,
+    "scheduler" : false,
+    "scheduler_step_size" : 40,
+    "gamma" : 0.1
 }

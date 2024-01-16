@@ -8,13 +8,22 @@ import torch
 import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
+# for run folder naming
+import socket
+from datetime import datetime
+
 
 
 
 def train_loop(config):
 
 
-    writer = SummaryWriter(log_dir=config['log_dir'],comment=config['run_name'])
+    current_time = datetime.now().strftime("%b%d_%H-%M-%S")
+    log_dir = os.path.join(
+        config['log_dir'], current_time + "_" + socket.gethostname() + config['run_name']
+    )
+
+    writer = SummaryWriter(log_dir=log_dir)
     # setting device on GPU if available, else CPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -22,7 +31,7 @@ def train_loop(config):
     ################# DATASET
 
 
-    transform = Decimation_FaceToEdge(remove_faces=True,target_reduction=config['target_reduction'])
+    transform = Decimation_FaceToEdge(remove_faces=True,target_reduction=config['target_reduction'],rotate=config['rotate'])
 
     assert config['dataset'] == 10 or config['dataset'] == 40
 
@@ -41,11 +50,10 @@ def train_loop(config):
 
     ####################### OPTIMIZER AND LOSS
 
-    # GAMMA = 0.5
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config['learning_rate'])
     criterion = torch.nn.CrossEntropyLoss()  # Define loss criterion.
-    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer,step_size=5,gamma=GAMMA)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer,step_size=config['scheduler_step_size'],gamma=config['gamma'])
 
 
     ######################### TRAINING LOOP
@@ -129,20 +137,27 @@ def train_loop(config):
 
         # pbar.set_description(f"Epoch loss {total_loss}")
 
-    writer.add_hparams(
-        hparam_dict= {
-            'lr' : LR,
-            # 'gamma' : GAMMA,
-            'batch_size' : BATCH_SIZE,
-            'target_reduction' : TARGET_REDUCTION
-        },
+        ######################################## SCHEDULER STEP
 
-        metric_dict = {
-            'hparams/val_accuracy' : val_best_accuracy,
-            'hparams/val_loss' : val_best_loss
+        if config['scheduler']: 
+            scheduler.step()
+            writer.add_scalar('LearningRate', scheduler.get_last_lr()[0],epoch) # get_last_lr returns a list in case of multiple learning rates
 
-        }
-    )
+
+    # writer.add_hparams(
+    #     hparam_dict= {
+    #         'lr' : LR,
+    #         # 'gamma' : GAMMA,
+    #         'batch_size' : BATCH_SIZE,
+    #         'target_reduction' : TARGET_REDUCTION
+    #     },
+
+    #     metric_dict = {
+    #         'hparams/val_accuracy' : val_best_accuracy,
+    #         'hparams/val_loss' : val_best_loss
+
+    #     }
+    # )
 
 
 

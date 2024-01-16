@@ -82,6 +82,7 @@ class Decimation_FaceToEdge(BaseTransform):
 
             if self.rotate: # rotate randomly
                 x_deg,y_deg,z_deg=360*np.random.rand(3)
+                pivot = center_of_mass
                 mesh_decimated.rotate_x(x_deg,pivot,inplace=True)
                 mesh_decimated.rotate_y(y_deg,pivot,inplace=True)
                 mesh_decimated.rotate_z(z_deg,pivot,inplace=True)
