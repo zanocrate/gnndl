@@ -9,8 +9,7 @@ import torch
 class MyGNN(nn.Module):
 
     """
-    Best GNN so far
-    One more EdgeConv wrt baseline
+    Like best model but with relu
     """
 
     def __init__(self,output_classes=10):
@@ -21,7 +20,7 @@ class MyGNN(nn.Module):
                 # here we define h_theta
                 nn=nn.Sequential(
                     nn.Linear(2*3,64),
-                    nn.Sigmoid()
+                    nn.ReLU()
                 ),
                 aggr='max'
             )
@@ -29,7 +28,7 @@ class MyGNN(nn.Module):
         self.edge_conv_2 = EdgeConv(
                 nn=nn.Sequential(
                     nn.Linear(2*64,64),
-                    nn.Sigmoid()
+                    nn.ReLU()
                 ),
                 aggr='max'
             )
@@ -37,7 +36,7 @@ class MyGNN(nn.Module):
         self.edge_conv_3 = EdgeConv(
                 nn=nn.Sequential(
                     nn.Linear(2*64,64),
-                    nn.Sigmoid()
+                    nn.ReLU()
                 ),
                 aggr='max'
             )
@@ -45,7 +44,7 @@ class MyGNN(nn.Module):
         self.edge_conv_4 = EdgeConv(
                 nn=nn.Sequential(
                     nn.Linear(2*64,128),
-                    nn.Sigmoid()
+                    nn.ReLU()
                 ),
                 aggr='max'
             )
@@ -53,7 +52,7 @@ class MyGNN(nn.Module):
         self.edge_conv_5 = EdgeConv(
                 nn=nn.Sequential(
                     nn.Linear(2*128,128),
-                    nn.Sigmoid()
+                    nn.ReLU()
                 ),
                 aggr='max'
             )

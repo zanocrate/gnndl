@@ -72,7 +72,11 @@ class Decimation_FaceToEdge(BaseTransform):
             target_reduction = self.target_reduction
             mesh_decimated = mesh.decimate(target_reduction)
 
-            assert mesh_decimated.is_all_triangles()
+            # this is because in some versions of pyvista .is_all_triangles is not callable
+            try:
+                assert mesh_decimated.is_all_triangles()
+            except:
+                assert mesh_decimated.is_all_triangles
 
             center_of_mass = mesh_decimated.outline().center_of_mass()
 
