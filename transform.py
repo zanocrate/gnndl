@@ -10,6 +10,8 @@ from torch_geometric.data.datapipes import functional_transform
 from torch_geometric.transforms import BaseTransform
 from torch_geometric.utils import to_undirected
 
+from scipy.spatial.transform import Rotation
+
 import pyvista as pv 
 import numpy as np
 
@@ -30,7 +32,7 @@ class Decimation_FaceToEdge(BaseTransform):
         
 
     """
-    def __init__(self, remove_faces: bool = True, add_master_node: bool = False, target_reduction: float = 0.7, traslate: bool = False, scale: bool = False, rotate: bool = False):
+    def __init__(self, remove_faces: bool = True, target_reduction: float = 0.7, traslate: bool = False, scale: bool = False):
 
         assert target_reduction < 1.0
         
@@ -38,8 +40,6 @@ class Decimation_FaceToEdge(BaseTransform):
         self.target_reduction = target_reduction
         self.traslate = traslate
         self.scale = scale
-        self.rotate = rotate
-        self.add_master_node = add_master_node
         
     def __face_to_edge(self, data: Data) -> Data:
         if hasattr(data, 'face'):
@@ -84,13 +84,6 @@ class Decimation_FaceToEdge(BaseTransform):
                 mesh_decimated.translate(-center_of_mass,inplace=True)
                 center_of_mass = center_of_mass*0.
 
-            if self.rotate: # rotate randomly
-                x_deg,y_deg,z_deg=360*np.random.rand(3)
-                pivot = center_of_mass
-                mesh_decimated.rotate_x(x_deg,pivot,inplace=True)
-                mesh_decimated.rotate_y(y_deg,pivot,inplace=True)
-                mesh_decimated.rotate_z(z_deg,pivot,inplace=True)
-
             if self.scale: # scale so that it fits into [-1,1]^3 region
                 scaling_factor = 1/max(abs(np.array(mesh_decimated.bounds)))
                 mesh_decimated.scale(scaling_factor,inplace=True)
@@ -103,25 +96,48 @@ class Decimation_FaceToEdge(BaseTransform):
             return data, center_of_mass
 
 
-    def __add_master_node(self, data: Data,center_of_mass) -> Data:
+    def forward(self, data: Data) -> Data:
+        
+        data,center_of_mass = self.__decimate(data)
+        data = self.__face_to_edge(data)
+        
+        return data
 
-        # add the center of mass vector as an additional node
-        data.pos = torch.vstack((torch.Tensor(center_of_mass),data.pos))
-        # we shift every existing link by one because we add the master node as the first one
-        data.edge_index = data.edge_index + 1 
-        # links from the 0th node to all the others
-        additional_edges = torch.vstack((torch.zeros(data.num_nodes-1,dtype=int),torch.arange(1,data.num_nodes))) 
-        # add them to the edges list
-        data.edge_index = torch.hstack((additional_edges,data.edge_index))
+
+@functional_transform('rotate_scale_traslate')
+class RotateScaleTraslate(BaseTransform):
+    r"""Decimate and manipulate a mesh using PyVista and converts mesh faces :obj:`[3, num_faces]` to edge indices
+    :obj:`[2, num_edges]` (functional name: :obj:`decimation_face_to_edge`).
+
+    Args:
+        traslate (bool, optional) : If set to :obj:`True`, traslate the mesh so that the center of mass is in the origin
+        rotate (bool, optional) : If set to :obj:`True`, rotate the mesh in a random (phi,theta) polar angle
+        scale (bool, optional) : If set to :obj:`True`, scale the mesh so that it fits in the [-1,1] cube around the origin
+    """
+    def __init__(self, traslate: bool = False, scale: bool = False, rotate: bool = False):
+
+        
+        self.traslate = traslate
+        self.scale = scale
+        self.rotate = rotate
+        
+
+    def __manipulate(self, data: Data) -> Data:
+
+        # data should have .pos attribute that represents the vertices cartesian coordinates
+        # also a edge_index that represents edges but not important
+
+        if self.rotate:
+
+            rotation_matrix = Rotation.random().as_matrix()
+
+            data.pos = data.pos @ rotation_matrix
+
 
         return data
 
     def forward(self, data: Data) -> Data:
         
-        data,center_of_mass = self.__decimate(data)
-        data = self.__face_to_edge(data)
+        return self.__manipulate(data)
 
-        if self.add_master_node:
-            data = self.__add_master_node(data,center_of_mass)
-        
-        return data
+

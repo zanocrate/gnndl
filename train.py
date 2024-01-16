@@ -1,5 +1,5 @@
 # from torch_geometric.transforms import FaceToEdge
-from transform import Decimation_FaceToEdge
+from transform import Decimation_FaceToEdge, RotateScaleTraslate
 from torch_geometric.transforms import Compose, ToDevice
 from torch_geometric.datasets import ModelNet
 from torch_geometric.loader import DataLoader
@@ -31,17 +31,18 @@ def train_loop(config):
 
     ################# DATASET
 
+    pre_transform = Decimation_FaceToEdge(remove_faces=True,target_reduction=config['target_reduction'])
     transform = Compose([
-        Decimation_FaceToEdge(remove_faces=True,target_reduction=config['target_reduction'],rotate=config['rotate']),
+        RotateScaleTraslate(rotate=True),
         ToDevice(device)
         ])
 
     assert config['dataset'] == 10 or config['dataset'] == 40
 
-    train_dataset = ModelNet(root=config['dataset_root'],name=str(config['dataset']),train=True,transform=transform)
+    train_dataset = ModelNet(root=config['dataset_root'],name=str(config['dataset']),train=True,transform=transform,pre_transform=pre_transform)
     train_loader = DataLoader(dataset=train_dataset,batch_size=config['batch_size'],shuffle=True) 
 
-    test_dataset = ModelNet(root=config['dataset_root'],name=str(config['dataset']),train=False,transform=transform)
+    test_dataset = ModelNet(root=config['dataset_root'],name=str(config['dataset']),train=False,transform=transform,pre_transform=pre_transform)
     test_loader = DataLoader(dataset=test_dataset,batch_size=config['batch_size'],shuffle=True) 
 
 

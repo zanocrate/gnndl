@@ -1,10 +1,10 @@
 {
     "log_dir" : "/dataNfs/gnn/runs/" ,
-    "run_name" : "best_model_with_rotations_and_relu_MODELNET10", 
+    "run_name" : "new_shit_MODELNET10", 
     "dataset" : 10,
     "dataset_root" : "/dataNfs/gnn/",
     "epochs" : 150,
-    "target_reduction" : 0.75,
+    "target_reduction" : 0.7,
     "rotate" : true,
     "batch_size" : 8,
     "learning_rate" : 0.05,
