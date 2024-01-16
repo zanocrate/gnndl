@@ -1,5 +1,6 @@
 # from torch_geometric.transforms import FaceToEdge
 from transform import Decimation_FaceToEdge
+from torch_geometric.transforms import Compose, ToDevice
 from torch_geometric.datasets import ModelNet
 from torch_geometric.loader import DataLoader
 import os
@@ -30,8 +31,10 @@ def train_loop(config):
 
     ################# DATASET
 
-
-    transform = Decimation_FaceToEdge(remove_faces=True,target_reduction=config['target_reduction'],rotate=config['rotate'])
+    transform = Compose([
+        Decimation_FaceToEdge(remove_faces=True,target_reduction=config['target_reduction'],rotate=config['rotate']),
+        ToDevice(device)
+        ])
 
     assert config['dataset'] == 10 or config['dataset'] == 40
 
