@@ -6,10 +6,11 @@ from torch_geometric.nn import aggr
 import torch
 
 
+
 class MyGNN(nn.Module):
 
     """
-    Like best model but with relu
+    Completely new shit
     """
 
     def __init__(self,output_classes=10):
@@ -19,48 +20,34 @@ class MyGNN(nn.Module):
         self.edge_conv_1 = EdgeConv(
                 # here we define h_theta
                 nn=nn.Sequential(
-                    nn.Linear(2*3,64),
-                    nn.ReLU()
+                    nn.Linear(2*3,128),
+                    nn.Sigmoid()
                 ),
                 aggr='max'
             )
         
         self.edge_conv_2 = EdgeConv(
                 nn=nn.Sequential(
-                    nn.Linear(2*64,64),
-                    nn.ReLU()
+                    nn.Linear(2*128,256),
+                    nn.Sigmoid()
                 ),
                 aggr='max'
             )
 
-        self.edge_conv_3 = EdgeConv(
-                nn=nn.Sequential(
-                    nn.Linear(2*64,64),
-                    nn.ReLU()
-                ),
-                aggr='max'
-            )
-
-        self.edge_conv_4 = EdgeConv(
-                nn=nn.Sequential(
-                    nn.Linear(2*64,128),
-                    nn.ReLU()
-                ),
-                aggr='max'
-            )
-
-        self.edge_conv_5 = EdgeConv(
-                nn=nn.Sequential(
-                    nn.Linear(2*128,128),
-                    nn.ReLU()
-                ),
-                aggr='max'
-            )
+        # self.edge_conv_3 = EdgeConv(
+        #         nn=nn.Sequential(
+        #             nn.Linear(2*512,128),
+        #             nn.Sigmoid()
+        #         ),
+        #         aggr='max'
+            # )
         
         self.max_pooling = aggr.MaxAggregation()
         self.mean_pooling = aggr.MeanAggregation()
 
         self.output_layer = nn.Sequential(
+            nn.Linear(256,128),
+            nn.Sigmoid(),
             nn.Linear(128,output_classes)
 
         )
@@ -69,9 +56,9 @@ class MyGNN(nn.Module):
 
         x = self.edge_conv_1(x,edge_index)
         x = self.edge_conv_2(x,edge_index)
-        x = self.edge_conv_3(x,edge_index)
-        x = self.edge_conv_4(x,edge_index)
-        x = self.edge_conv_5(x,edge_index)
+        # x = self.edge_conv_3(x,edge_index)
+        # x = self.edge_conv_4(x,edge_index)
+        # x = self.edge_conv_5(x,edge_index)
         x = self.max_pooling(x,batch)
 
         return self.output_layer(x)

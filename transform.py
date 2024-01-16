@@ -129,7 +129,7 @@ class RotateScaleTraslate(BaseTransform):
 
         if self.rotate:
 
-            rotation_matrix = Rotation.random().as_matrix()
+            rotation_matrix = torch.from_numpy(Rotation.random().as_matrix()).float()
 
             data.pos = data.pos @ rotation_matrix
 

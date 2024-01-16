@@ -2,7 +2,7 @@
     "log_dir" : "/dataNfs/gnn/runs/" ,
     "run_name" : "new_shit_MODELNET10", 
     "dataset" : 10,
-    "dataset_root" : "/dataNfs/gnn/",
+    "dataset_root" : "/home/ubuntu/gnndl/",
     "epochs" : 150,
     "target_reduction" : 0.7,
     "rotate" : true,
