@@ -16,7 +16,7 @@ from datetime import datetime
 
 
 
-def train_loop(config,model=None):
+def train_loop(config,model=None,optimizer=None):
 
 
     current_time = datetime.now().strftime("%b%d_%H-%M-%S")
@@ -56,7 +56,8 @@ def train_loop(config,model=None):
     ####################### OPTIMIZER AND LOSS
 
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=config['learning_rate'])
+    if optimizer is None:
+        optimizer = torch.optim.Adam(model.parameters(), lr=config['learning_rate'])
     criterion = torch.nn.CrossEntropyLoss()  # Define loss criterion.
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer,step_size=config['scheduler_step_size'],gamma=config['gamma'])
 
