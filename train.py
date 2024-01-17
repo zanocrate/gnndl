@@ -16,7 +16,7 @@ from datetime import datetime
 
 
 
-def train_loop(config):
+def train_loop(config,model=None):
 
 
     current_time = datetime.now().strftime("%b%d_%H-%M-%S")
@@ -48,8 +48,9 @@ def train_loop(config):
 
     ####################### MODEL
 
-    from model import MyGNN
-    model = MyGNN(config['dataset'])
+    if model is None:
+        from model import MyGNN
+        model = MyGNN(config['dataset'])
     model.to(device)
 
     ####################### OPTIMIZER AND LOSS
